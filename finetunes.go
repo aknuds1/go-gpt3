@@ -52,8 +52,8 @@ func (c *Client) CreateFineTune(ctx context.Context, request FineTuneRequest) (F
 	return resp, err
 }
 
-// RetrieveFineTuneResponse represents a response to a request to retrieve a fine-tune from OpenAI.
-type RetrieveFineTuneResponse struct {
+// FineTuneJob represents an OpenAI fine-tune job.
+type FineTuneJob struct {
 	ID              string          `json:"id"`
 	Object          string          `json:"object"`
 	Model           string          `json:"model"`
@@ -68,16 +68,36 @@ type RetrieveFineTuneResponse struct {
 }
 
 // RetrieveFineTune requests the retrieval of an OpenAI fine-tune.
-func (c *Client) RetrieveFineTune(ctx context.Context, id string) (RetrieveFineTuneResponse, error) {
+func (c *Client) RetrieveFineTune(ctx context.Context, id string) (FineTuneJob, error) {
 	u := c.fullURL(path.Join("/fine-tunes", id))
 	req, err := http.NewRequest(http.MethodGet, u, nil)
 	if err != nil {
-		return RetrieveFineTuneResponse{}, fmt.Errorf("make %s request to %s: %w", http.MethodGet, u, err)
+		return FineTuneJob{}, fmt.Errorf("make %s request to %s: %w", http.MethodGet, u, err)
 	}
 
 	req = req.WithContext(ctx)
 
-	var resp RetrieveFineTuneResponse
+	var job FineTuneJob
+	err = c.sendRequest(req, &job)
+	return job, err
+}
+
+type fineTuneJobResp struct {
+	Object string        `json:"object"`
+	Data   []FineTuneJob `json:"data"`
+}
+
+// ListFineTunes lists the organization's OpenAI fine-tune jobs.
+func (c *Client) ListFineTunes(ctx context.Context) ([]FineTuneJob, error) {
+	u := c.fullURL("/fine-tunes")
+	req, err := http.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, fmt.Errorf("make %s request to %s: %w", http.MethodGet, u, err)
+	}
+
+	req = req.WithContext(ctx)
+
+	var resp fineTuneJobResp
 	err = c.sendRequest(req, &resp)
-	return resp, err
+	return resp.Data, err
 }
