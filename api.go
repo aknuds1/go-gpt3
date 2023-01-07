@@ -59,7 +59,6 @@ func (c *Client) sendRequest(req *http.Request, v interface{}) error {
 	if err != nil {
 		return err
 	}
-
 	defer res.Body.Close()
 
 	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusBadRequest {
